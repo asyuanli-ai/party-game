@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>派對遊戲合輯 (最終版)</title>
+    <style>
+        :root {
+            --primary-color: #FFB7B2; /* 柔和粉 */
+            --secondary-color: #B5EAD7; /* 薄荷綠 */
+            --accent-color: #E2F0CB; /* 淺黃綠 */
+            --blue-color: #C7CEEA; /* 淡紫藍 */
+            --text-color: #555;
+            --bg-color: #FFF9F5;
+            --button-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            user-select: none;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 25px;
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 5px solid var(--primary-color);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        h1 { color: #FF9AA2; margin-bottom: 10px; font-size: 1.8rem; }
+        h2 { font-size: 1.4rem; margin: 15px 0; color: #666; }
+        p { font-size: 1rem; color: #888; margin: 10px 0; }
+
+        .hidden { display: none !important; }
+
+        /* 按鈕樣式 */
+        button {
+            border: none;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 8px 0;
+            font-weight: bold;
+            box-shadow: var(--button-shadow);
+            transition: transform 0.1s;
+            width: 100%;
+            max-width: 320px;
+            display: inline-block;
+        }
+
+        button:active { transform: translateY(4px); box-shadow: none; }
+
+        .btn-start { background-color: var(--secondary-color); color: #444; }
+        .btn-game-select { background-color: #FFDAC1; color: #555; font-size: 1.3rem; margin: 15px 0; padding: 20px; }
+        .btn-action { background-color: var(--blue-color); color: #444; }
+        .btn-wrong { background-color: #FFB7B2; }
+        .btn-answer { background-color: #ffd166; color: #555; }
+        
+        .footer-controls {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dashed #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-end { background-color: #eee; color: #888; font-size: 0.9rem; padding: 10px; box-shadow: none; }
+        .btn-menu { background-color: #fff; border: 2px solid var(--secondary-color); color: var(--secondary-color); }
+        
+        /* 回到首頁的特殊按鈕 */
+        .btn-reset-home {
+            background-color: white;
+            border: 2px solid #FFB7B2;
+            color: #FFB7B2;
+            margin-top: 30px;
+            font-size: 1rem;
+        }
+
+        input[type="number"] {
+            font-size: 1.5rem;
+            padding: 10px;
+            width: 80px;
+            text-align: center;
+            border: 2px solid var(--secondary-color);
+            border-radius: 10px;
+            color: var(--text-color);
+            margin: 20px 0;
+        }
+
+        /* 遊戲顯示區 */
+        .big-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #FF6F61;
+            margin: 20px 0;
+            min-height: 70px;
+            line-height: 1.2;
+        }
+
+        /* 獨家暗語結果彈窗區 */
+        .overlay-result {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* 注音顯示區 */
+        .zhuyin-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .zhuyin-card {
+            background: #FFF0F5;
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 2px solid #FFB7B2;
+            min-width: 80px;
+        }
+
+        .zhuyin-label {
+            font-size: 0.9rem;
+            color: #999;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .zhuyin-char {
+            font-size: 4rem;
+            color: #FF6F61;
+            font-weight: 900;
+            display: block;
+            line-height: 1;
+        }
+
+        #timer-display, #g1-timer {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 10px 0;
+        }
+
+        .timer-warning { color: #FFB7B2 !important; animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* 答案區 */
+        .answer-box {
+            background-color: #FFF9C4;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 15px 0;
+            font-size: 1.3rem;
+            color: #555;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .player-btn {
+            background-color: var(--accent-color);
+            font-size: 1rem;
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        .badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .score-list { list-style: none; padding: 0; text-align: left; }
+        .score-list li {
+            background: var(--accent-color);
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 1. 全局設定 -->
+        <div id="view-setup">
+            <h1>🎮 派對遊戲合輯</h1>
+            <p>設定今天遊玩的人數</p>
+            <div>
+                <input type="number" id="player-count" value="4" min="2" max="12">
+            </div>
+            <button class="btn-start" onclick="initApp()">確認人數</button>
+        </div>
+
+        <!-- 2. 遊戲選單 -->
+        <div id="view-menu" class="hidden">
+            <h1>選擇遊戲</h1>
+            <p>目前累積總分將會保留</p>
+            <button class="btn-game-select" onclick="setupGame1()">🤫 獨家暗語<br><span style="font-size:0.8rem">純名詞題庫 / 輪流制</span></button>
+            <button class="btn-game-select" onclick="setupGame2()">🔠 注音大亂鬥<br><span style="font-size:0.8rem">首字聲母+次字聲母</span></button>
+            
+            <!-- 新增：重設按鈕 -->
+            <button class="btn-reset-home" onclick="fullReset()">🔄 重設人數 / 重新開始</button>
+        </div>
+
+        <!-- === 遊戲 1：獨家暗語 === -->
+        <div id="game1-prep" class="hidden">
+            <div class="badge">獨家暗語</div>
+            <h2>🙈 請猜題者閉眼</h2>
+            <div class="badge" style="background:#888" id="g1-guesser-name">玩家 ?</div>
+            <p>其他人準備好後點擊看題目</p>
+            <button class="btn-action" onclick="g1ShowKeyword()">看題目</button>
+        </div>
+
+        <div id="game1-keyword" class="hidden">
+            <div class="badge">題目</div>
+            <div class="big-display" id="g1-keyword-display">...</div>
+            <p>想好提示後，點擊隱藏</p>
+            <button class="btn-action" onclick="g1HideAndStart()">隱藏並計時</button>
+        </div>
+
+        <div id="game1-guessing" class="hidden">
+            <div class="badge">猜題中</div>
+            <div id="g1-timer">40</div>
+            <p>請睜眼看大家給的提示！</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn-action" onclick="g1ShowAnswerOverlay(true)">✅ 答對</button>
+                <button class="btn-wrong" onclick="g1ShowAnswerOverlay(false)">❌ 跳過</button>
+            </div>
+            
+            <!-- 答案顯示遮罩 (預設隱藏) -->
+            <div id="g1-overlay" class="overlay-result hidden">
+                <h2 id="g1-result-title">🎉 答對了！</h2>
+                <p>這一題的答案是：</p>
+                <div class="big-display" id="g1-result-word">...</div>
+                <button class="btn-start" onclick="g1FinalizeTurn()">下一位玩家</button>
+            </div>
+        </div>
+
+        <!-- === 遊戲 2：注音大亂鬥 (完美版) === -->
+        <div id="game2-main" class="hidden">
+            <div class="badge">注音大亂鬥</div>
+            <p>請猜出符合這兩個開頭注音的<b>雙字名詞</b></p>
+            
+            <div class="zhuyin-container">
+                <div class="zhuyin-card">
+                    <span class="zhuyin-label">第一個字</span>
+                    <span class="zhuyin-char" id="g2-zhuyin1">ㄅ</span>
+                </div>
+                <div class="zhuyin-card">
+                    <span class="zhuyin-label">第二個字</span>
+                    <span class="zhuyin-char" id="g2-zhuyin2">ㄇ</span>
+                </div>
+            </div>
+
+            <!-- 答案區 -->
+            <div id="g2-answer-area" class="answer-box hidden">
+                <div style="font-size:0.8rem; color:#888;">參考答案 (最多3個)：</div>
+                <div id="g2-answer-text"></div>
+            </div>
+
+            <div id="g2-timer">40</div>
+
+            <button id="btn-show-ans" class="btn-answer" onclick="g2ShowAnswer()">👀 看正確答案</button>
+
+            <p style="margin-bottom: 5px; margin-top: 15px;">👇 誰答對了？ 👇</p>
+            <div id="g2-player-buttons" class="player-grid">
+                <!-- JS 動態生成 -->
+            </div>
+            
+            <button class="btn-wrong" style="margin-top:20px; font-size:0.9rem;" onclick="g2NextQuestion()">❌ 沒人答出來 / 下一題</button>
+        </div>
+
+        <!-- 3. 結算畫面 -->
+        <div id="view-results" class="hidden">
+            <h1>🏆 目前戰績</h1>
+            <ul id="score-list" class="score-list"></ul>
+            <button class="btn-start" onclick="backToMenu()">回到遊戲選單</button>
+        </div>
+
+        <!-- 底部通用控制列 -->
+        <div id="footer-controls" class="footer-controls hidden">
+            <button class="btn-menu" onclick="backToMenu()">🏠 回選單</button>
+            <button class="btn-end" onclick="showResults()">🏁 結束遊戲並結算</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 500+ 獨家暗語題庫 (純名詞/人物/地點/物品) ---
+        const wordString = "珍珠奶茶,臭豆腐,夾娃娃機,垃圾車,安全帽,便利商店,悠遊卡,摩托車,藍白拖,電鍋,雞排,鹹酥雞,滷肉飯,牛肉麵,小籠包,台北101,捷運,高鐵,YouBike,外送員,口罩,衛生紙,統一發票,健保卡,補習班,夜市,手搖飲,全聯,麥當勞,星巴克,颱風,地震,梅雨季,寒流,冷氣,周杰倫,蔡依林,五月天,鄧紫棋,伍佰,蠟筆小新,哆啦A夢,皮卡丘,瑪利歐,哥吉拉,蟑螂,蚊子,台灣黑熊,石虎,柯基,柴犬,貓咪,手機,充電線,行動電源,耳機,眼鏡,雨傘,保溫瓶,背包,刮刮樂,紅包,麻將,春聯,粽子,龍舟,月餅,柚子,聖誕樹,煙火,薪水,年終獎金,老闆,同事,學生,老師,考試,作業,暑假,寒假,畢業證書,操場,營養午餐,鉛筆盒,橡皮擦,黑板,粉筆,掃把,拖把,垃圾桶,冰箱,洗衣機,電視,遙控器,吹風機,牙刷,牙膏,毛巾,沐浴乳,洗髮精,馬桶,鏡子,枕頭,棉被,床,沙發,桌子,椅子,電風扇,除濕機,計算機,剪刀,美工刀,膠帶,原子筆,筆記本,電腦,鍵盤,滑鼠,螢幕,麥克風,攝影機,腳踏車,公車,計程車,飛機,機場,護照,行李箱,飯店,烤肉架,帳篷,睡袋,手電筒,防蚊液,太陽,月亮,星星,雲,彩虹,閃電,雪人,海邊,沙灘,比基尼,泳衣,泳鏡,救生圈,遊樂園,摩天輪,雲霄飛車,旋轉木馬,鬼屋,動物園,長頸鹿,大象,獅子,老虎,猴子,企鵝,無尾熊,熊貓,兔子,烏龜,金魚,鯊魚,鯨魚,海豚,章魚,螃蟹,蝦子,蛤蜊,蚵仔煎,大腸包小腸,地瓜球,糖葫蘆,豬血糕,豆花,剉冰,芒果冰,鳳梨酥,太陽餅,牛舌餅,麻糬,釋迦,蓮霧,芒果,西瓜,鳳梨,香蕉,蘋果,橘子,葡萄,草莓,水蜜桃,火龍果,奇異果,檸檬,番茄,高麗菜,空心菜,花椰菜,紅蘿蔔,玉米,地瓜,馬鈴薯,洋蔥,大蒜,辣椒,醬油,醋,鹽巴,糖,胡椒粉,番茄醬,美乃滋,吐司,三明治,漢堡,薯條,披薩,義大利麵,壽司,生魚片,拉麵,火鍋,羊肉爐,薑母鴨,牛排,鐵板燒,自助餐,便當,水餃,鍋貼,蔥油餅,蛋餅,飯糰,豆漿,米漿,牛奶,咖啡,可樂,汽水,果汁,啤酒,紅酒,白酒,香檳,威士忌,高粱酒,棒球,籃球,足球,羽球,桌球,網球,電影院,醫院,救護車,消防車,警車,郵差,警察,消防員,醫生,護士,廚師,司機,空姐,機長,總統,市長,里長,藝人,網紅,YouTuber,直播主,IG,Facebook,LINE,YouTube,Google,Wifi,藍芽,電池,插座,開關,電燈,蠟燭,打火機,火柴,煙灰缸,戒指,項鍊,耳環,手錶,手環,皮帶,領帶,襪子,鞋子,拖鞋,靴子,高跟鞋,裙子,褲子,衣服,外套,毛衣,圍巾,手套,帽子,錢包,鑰匙,身分證,駕照,信用卡,提款卡,存摺,印章,合約,罰單,帳單,門票,電影票,車票,機票,地圖,指南針,地球儀,望遠鏡,顯微鏡,放大鏡,溫度計,時鐘,鬧鐘,日曆,月曆,相框,相簿,相機,底片,膠卷,畫布,顏料,水彩,蠟筆,彩色筆,毛筆,硯台,墨水,鋼琴,小提琴,吉他,鼓,笛子,喇叭,音響,舞台,燈光,布幕,觀眾,氣球,彩帶,蛋糕,卡片,禮物,鮮花,巧克力,鑽石,黃金,白銀,銅板,鈔票,支票,股票,銀行,郵局,法院,警察局,消防局,圖書館,博物館,美術館,體育館,公園,遊樂場,停車場,加油站,洗車場,修車廠,理髮廳,美容院,健身房,KTV,網咖,保齡球館,撞球館,游泳池,溫泉,沙漠,森林,草原,高山,瀑布,河流,湖泊,海洋,島嶼,火山,山洞,隧道,橋樑,馬路,紅綠燈,斑馬線,天橋,地下道,路燈,路樹,花圃,草地,泥土,石頭,沙子,灰塵,空氣,水,火,風,影子,聲音,味道,顏色,形狀,圓形,方形,三角形,愛心,笑臉,哭臉,爺爺,奶奶,外公,外婆,叔叔,阿姨,伯父,伯母,舅舅,舅媽,姑姑,姑丈,表哥,表妹,堂弟,堂姐,鄰居,朋友,同學,情侶,夫妻,家人,寵物,主人,客人,敵人,陌生人,外星人,鬼,神,天使,惡魔,精靈,巫師,超能力,時光機,任意門,竹蜻蜓,時光包巾,縮小燈,記憶吐司,隱形斗篷,飛天掃帚,魔杖,寶劍,盾牌,鎧甲,頭盔,弓箭,子彈,大炮,炸彈,地雷,飛彈,火箭,太空船,衛星,太空人,宇宙,黑洞,銀河,太陽系,地球,火星,月球,水星,金星,木星,土星";
+        const wordDatabase = wordString.split(',');
+
+        // --- 修正版注音題庫：雙字聲母對應 (格式：聲母1-聲母2 : [詞彙列表]) ---
+        const zhuyinPairsRaw = {
+            "ㄅ-ㄇ": "斑馬,幫忙,保母,白馬,北門,表面",
+            "ㄅ-ㄌ": "暴力,便利,芭樂,玻璃,伴侶,霸凌",
+            "ㄆ-ㄧ": "朋友,便宜,皮衣",
+            "ㄇ-ㄈ": "魔法,模仿,米粉,密封,每逢",
+            "ㄈ-ㄐ": "風景,飛機,放假,富家,反擊,附近",
+            "ㄉ-ㄒ": "大象,對象,大小,地下,代謝,大雪",
+            "ㄉ-ㄕ": "電視,讀書,登山,單身,大叔,袋鼠",
+            "ㄊ-ㄧ": "太陽,同意,統一,體育,討厭,同樣",
+            "ㄋ-ㄌ": "努力,能力,能量,哪裡,耐力,奴隸",
+            "ㄌ-ㄙ": "螺絲,綠色,垃圾,藍色,拉薩,律師",
+            "ㄍ-ㄐ": "感覺,乾淨,冠軍,國家,攻擊,古蹟,逛街",
+            "ㄎ-ㄌ": "可樂,快樂,恐龍,顆粒,考慮,苦力",
+            "ㄏ-ㄕ": "護士,壞事,何時,後世,火山,渾身",
+            "ㄏ-ㄙ": "黑色,紅色,活塞,好酸,黑色",
+            "ㄐ-ㄉ": "雞蛋,簡單,街道,決定,季度,激動,軍隊",
+            "ㄐ-ㄏ": "機會,結婚,集合,精華,計畫,句話",
+            "ㄑ-ㄎ": "巧克力,請客,缺口,氣孔,全開,乾坤",
+            "ㄒ-ㄍ": "西瓜,習慣,效果,修改,性感,選購",
+            "ㄓ-ㄊ": "枕頭,豬頭,偵探,整體,暫停,這天",
+            "ㄔ-ㄈ": "吃飯,廚房,重覆,處罰,出發,吹風,成分",
+            "ㄕ-ㄐ": "手機,時間,世界,暑假,水晶,設計,神經",
+            "ㄖ-ㄑ": "日期,熱情,人權,人氣,如今",
+            "ㄗ-ㄘ": "早餐,總裁,組成,造成",
+            "ㄘ-ㄇ": "草莓,聰明,側面,催眠,刺蝟",
+            "ㄙ-ㄐ": "司機,四季,隨機,私交,四角",
+            "ㄧ-ㄕ": "浴室,醫生,意思,鑰匙,原始,顏色,優勢",
+            "ㄨ-ㄍ": "烏龜,王國,外國,五官,無辜",
+            "ㄅ-ㄅ": "爸爸,寶寶,背包,抱抱,保全,寶貝",
+            "ㄇ-ㄇ": "媽媽,妹妹,密碼,滿滿,美夢,買賣",
+            "ㄋ-ㄋ": "奶奶,牛奶,泥濘",
+            "ㄐ-ㄔ": "警察,機車,經常,幾成,基礎",
+            "ㄌ-ㄏ": "厲害,靈魂,離婚,老虎,路滑,靈活",
+            "ㄎ-ㄒ": "開心,可惜,科學,看戲,空虛,看雪",
+            "ㄒ-ㄗ": "鞋子,小子,現在,寫字,洗澡,選擇,星座"
+        };
+
+        const zhuyinDatabase = Object.keys(zhuyinPairsRaw).map(key => ({
+            z1: key.split('-')[0],
+            z2: key.split('-')[1],
+            ans: zhuyinPairsRaw[key].split(',')
+        }));
+
+        // --- 全局變數 ---
+        let players = [];
+        let timerInterval;
+        
+        // 獨家暗語變數
+        let g1_currentWords = [];
+        let g1_playerIndex = 0;
+        let g1_currentWord = "";
+        let g1_pendingCorrect = false;
+
+        // 注音大亂鬥變數
+        let g2_availableQuestions = []; // 用於存放還沒出過的題目
+        let currentZhuyinAnswer = [];
+
+        // --- 核心流程 ---
+        function initApp() {
+            const count = parseInt(document.getElementById('player-count').value);
+            players = [];
+            for(let i=1; i<=count; i++) {
+                players.push({ id: i, score: 0 });
+            }
+            switchView('view-menu');
+            document.getElementById('footer-controls').classList.remove('hidden');
+        }
+
+        // 新增：完整重置功能
+        function fullReset() {
+            if(confirm("確定要回到初始畫面重新設定人數嗎？\n⚠️ 目前的分數將會被清空喔！")) {
+                location.reload(); // 最乾淨的重置方式，重新整理頁面
+            }
+        }
+
+        function backToMenu() {
+            clearInterval(timerInterval);
+            switchView('view-menu');
+        }
+
+        function showResults() {
+            clearInterval(timerInterval);
+            const list = document.getElementById('score-list');
+            list.innerHTML = '';
+            
+            const sorted = [...players].sort((a,b) => b.score - a.score);
+            
+            sorted.forEach((p, idx) => {
+                const li = document.createElement('li');
+                let icon = idx === 0 ? '👑 ' : '';
+                li.innerHTML = `<span>${icon}玩家 ${p.id}</span> <strong>${p.score} 分</strong>`;
+                list.appendChild(li);
+            });
+            
+            switchView('view-results');
+            document.getElementById('footer-controls').classList.add('hidden');
+        }
+
+        // --- 遊戲 1：獨家暗語 ---
+        function setupGame1() {
+            g1_currentWords = [...wordDatabase];
+            g1_currentWords.sort(() => Math.random() - 0.5);
+            g1_playerIndex = 0;
+            g1NextTurn();
+        }
+
+        function g1NextTurn() {
+            document.getElementById('g1-guesser-name').textContent = `輪到 玩家 ${players[g1_playerIndex].id} 猜題`;
+            switchView('game1-prep');
+        }
+
+        function g1ShowKeyword() {
+            if(g1_currentWords.length === 0) {
+                alert("題目全部用完囉！將重新洗牌。");
+                g1_currentWords = [...wordDatabase].sort(() => Math.random() - 0.5);
+            }
+            g1_currentWord = g1_currentWords.pop();
+            document.getElementById('g1-keyword-display').textContent = g1_currentWord;
+            switchView('game1-keyword');
+        }
+
+        function g1HideAndStart() {
+            document.getElementById('g1-overlay').classList.add('hidden');
+            switchView('game1-guessing');
+            startTimer('g1-timer', 40, () => {});
+        }
+
+        function g1ShowAnswerOverlay(isCorrect) {
+            clearInterval(timerInterval);
+            g1_pendingCorrect = isCorrect;
+            
+            const overlay = document.getElementById('g1-overlay');
+            const title = document.getElementById('g1-result-title');
+            const wordDisplay = document.getElementById('g1-result-word');
+            
+            wordDisplay.textContent = g1_currentWord;
+            
+            if(isCorrect) {
+                title.textContent = "🎉 答對了！";
+                title.style.color = "#FF6F61";
+            } else {
+                title.textContent = "😅 跳過 / 答錯";
+                title.style.color = "#888";
+            }
+            
+            overlay.classList.remove('hidden');
+        }
+
+        function g1FinalizeTurn() {
+            if(g1_pendingCorrect) {
+                players[g1_playerIndex].score++;
+            }
+            g1_playerIndex = (g1_playerIndex + 1) % players.length;
+            g1NextTurn();
+        }
+
+        // --- 遊戲 2：注音大亂鬥 (不重複邏輯) ---
+        function setupGame2() {
+            // 初始化：複製一份完整的題庫到 g2_availableQuestions
+            g2_availableQuestions = [...zhuyinDatabase];
+
+            const grid = document.getElementById('g2-player-buttons');
+            grid.innerHTML = '';
+            players.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'player-btn';
+                btn.innerHTML = `玩家 ${p.id}<br>得分`;
+                btn.onclick = (e) => g2PlayerScore(p.id, e.target);
+                grid.appendChild(btn);
+            });
+            
+            g2NextQuestion();
+        }
+
+        function g2NextQuestion() {
+            // 隱藏答案區
+            document.getElementById('g2-answer-area').classList.add('hidden');
+            document.getElementById('btn-show-ans').classList.remove('hidden');
+
+            // 檢查題目是否用完
+            if (g2_availableQuestions.length === 0) {
+                alert("所有注音題目已出完一輪！將重新洗牌。");
+                g2_availableQuestions = [...zhuyinDatabase];
+            }
+
+            // 隨機抽取並移除
+            const randomIndex = Math.floor(Math.random() * g2_availableQuestions.length);
+            const q = g2_availableQuestions[randomIndex];
+            // 從可用清單中移除這題，避免重複
+            g2_availableQuestions.splice(randomIndex, 1);
+            
+            document.getElementById('g2-zhuyin1').textContent = q.z1;
+            document.getElementById('g2-zhuyin2').textContent = q.z2;
+            currentZhuyinAnswer = q.ans; 
+
+            switchView('game2-main');
+            startTimer('g2-timer', 40, () => {
+                document.getElementById('g2-timer').textContent = "時間到";
+            });
+        }
+
+        function g2ShowAnswer() {
+            const ansBox = document.getElementById('g2-answer-text');
+            
+            // 限制最多顯示 3 個答案
+            const displayAnswers = currentZhuyinAnswer.slice(0, 3);
+            ansBox.innerHTML = displayAnswers.join("、");
+            
+            if (currentZhuyinAnswer.length > 3) {
+                ansBox.innerHTML += " ...等";
+            }
+
+            document.getElementById('g2-answer-area').classList.remove('hidden');
+            document.getElementById('btn-show-ans').classList.add('hidden');
+        }
+
+        function g2PlayerScore(playerId, btn) {
+            clearInterval(timerInterval);
+            const player = players.find(p => p.id === playerId);
+            if(player) player.score++;
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "👍 +1";
+            btn.style.background = "#FFD700";
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = ""; 
+                g2NextQuestion();
+            }, 500);
+        }
+
+        // --- 通用工具 ---
+        function switchView(viewId) {
+            const views = [
+                'view-setup', 'view-menu', 'view-results',
+                'game1-prep', 'game1-keyword', 'game1-guessing',
+                'game2-main'
+            ];
+            views.forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            const footer = document.getElementById('footer-controls');
+            if(viewId === 'view-setup' || viewId === 'view-results') {
+                footer.classList.add('hidden');
+            } else {
+                footer.classList.remove('hidden');
+            }
+        }
+
+        function startTimer(elementId, seconds, onFinish) {
+            clearInterval(timerInterval);
+            let timeLeft = seconds;
+            const display = document.getElementById(elementId);
+            display.classList.remove('timer-warning');
+            display.textContent = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                display.textContent = timeLeft;
+                if(timeLeft <= 10) display.classList.add('timer-warning');
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    if(onFinish) onFinish();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
